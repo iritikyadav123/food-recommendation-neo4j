@@ -1,0 +1,21 @@
+{
+  "name": "consultant-exercise-api",
+  "private": true,
+  "version": "1.0.0",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node src/index.js"
+  },
+  "type": "module",
+  "dependencies": {
+    "@apollo/protobufjs": "^1.2.7",
+    "@apollo/server": "^4.11.3",
+    "@neo4j/graphql": "^6.1.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "graphql": "^16.10.0",
+    "neo4j-driver": "^5.26.0"
+  },
+  "packageManager": "yarn@1.22.22"
+}

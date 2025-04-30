@@ -1,0 +1,635 @@
+type Restaurant 
+  @node 
+  @query(aggregate: false) 
+{
+  id: ID!
+    @cypher(
+      statement: """
+      MATCH (this) RETURN id(this) AS n
+      """,
+      columnName: "n"
+    )
+  name: String
+
+  inRegion: Zipcode! @relationship(type: "IS_FROM", direction: OUT)
+  resOrder: [Order!]! @relationship(type: "HAS_ORDER", direction: OUT)
+  resItem: [Item!]! @relationship(type: "HAVE", direction: OUT)
+}
+
+type User 
+  @node 
+  @query(aggregate: false) 
+{
+  id: ID!
+    @cypher(
+      statement: """
+      MATCH (this) RETURN id(this) AS n
+      """,
+      columnName: "n"
+    )
+  name: String
+  email: String
+  age: Int
+  gender: String
+
+  livesIN: Zipcode! @relationship(type: "LIVES_IN", direction:OUT)
+  orderDel: [Order!]! @relationship(type: "ORDERED_BY", direction: IN)
+}
+
+type State 
+  @node 
+  @query(aggregate: false) 
+{
+  name: String!
+    @cypher(
+      statement: """
+      MATCH (this) RETURN this.name AS n
+      """,
+      columnName: "n"
+    )
+  cities: [City!]! @relationship(type: "IS_IN", direction: IN) 
+}
+
+type City 
+  @node 
+  @query(aggregate: false) 
+
+{
+  name: String!
+  hasZipcodes: [Zipcode!]! @relationship(type: "LIES_IN", direction: IN)
+}
+
+type Zipcode 
+  @node 
+  @query(aggregate: false) 
+{
+  zipcode: String!
+    @cypher(
+      statement: """
+      MATCH (this) RETURN this.zipcode AS n
+      """,
+      columnName: "n"
+    )
+  
+  hasCity: City! @relationship(type: "LIES_IN", direction: OUT)
+  hasRes: [Restaurant!]! @relationship(type: "IS_FROM", direction: IN)
+}
+
+type Category 
+  @node 
+  @query(aggregate: false) 
+{
+  name: String!
+    @cypher(
+      statement: """
+      MATCH (this) RETURN this.name AS n
+      """,
+      columnName: "n"
+    )
+  hasItem: [Item!]! @relationship(type: "HAS_ITEM", direction: OUT)
+}
+
+type Item 
+  @node 
+  @query(aggregate: false) 
+{
+  id: ID!
+    @cypher(
+      statement: """
+      MATCH (this) RETURN id(this) AS n
+      """,
+      columnName: "n"
+    )
+  name: String
+  price: Float
+
+  itemCategory: [Category!]! @relationship(type: "HAS_ITEM", direction: IN)  
+  itemBelongTo: Restaurant! @relationship(type: "HAVE", direction: IN)
+  likeReview: [Order!]! @relationship(type: "LIKED", direction: IN)
+  dislikeReview: [Order!]! @relationship(type: "DISLIKED", direction: IN)
+  containedBy: [Order!]! @relationship(type: "INCLUDE", direction: IN) 
+}
+
+type Order 
+  @node 
+  @query(aggregate: false) 
+{
+  id: ID!
+    @cypher(
+      statement: """
+      MATCH (this) RETURN id(this) AS n
+      """,
+      columnName: "n"
+    )
+  pay_mode: String
+  total_price: Float
+  rating: Int
+
+  orderBy: Restaurant! @relationship(type: "HAS_ORDER", direction: IN)
+  likeItem: [Item!]! @relationship(type: "LIKED", direction: OUT)
+  disLikeItem: [Item!]! @relationship(type: "DISLIKED", direction: OUT)
+  totalItem: [Item!]! @relationship(type: "INCLUDE", direction: OUT)
+}
+type SalesReport {
+  restaurant: String
+  Jan_sales: Float
+  Feb_sales: Float
+  Mar_sales: Float
+  Apr_sales: Float
+  May_sales: Float
+  Jun_sales: Float
+  Jul_sales: Float
+  Aug_sales: Float
+  Sep_sales: Float
+  Oct_sales: Float
+  Nov_sales: Float
+  Dec_sales: Float
+  Yearly_sales: Float
+}
+type DislikedItemReport {
+  restaurant_id: ID
+  restaurant_name: String
+  item_name: String
+  disliked_count: Int
+  total_count: Int
+  dislike_ratio: Float
+  interpretation: String
+}
+type LikedItemReport {
+  restaurant_id: ID
+  restaurant_name: String
+  item_name: String
+  liked_count: Int
+  total_count: Int
+  like_ratio: Float
+  interpretation: String
+}
+type TopSellingReport {
+  Restaurant: String
+  January: String
+  February: String
+  March: String
+  April: String
+  May: String
+  June: String
+  July: String
+  August: String
+  September: String
+  October: String
+  November: String
+  December: String
+}
+type SuggestedItem {
+  item_name: String
+  itemCategory: String
+  likedTotal: Int
+  orderCount: Int
+}
+type RecommendedRestaurant {
+  resname: String
+  res_id: ID
+  category: String
+  itemCount: Int
+  likes: Int
+}
+
+union SearchResult = Category | Restaurant | Item 
+
+type popularItem {
+  likedTotal: Int
+  item_name: String
+  orderCount: Int
+} 
+
+type restaurantItem {
+  item_id: String
+  item_name: String
+  number_of_order: Int
+  order_item: Int
+  liked_item: Int
+  disliked_item: Int
+  liked_percentage: Float
+  price: Float
+
+
+}
+type NearPopularRestaurant {
+   res_id: String
+   res_name: String 
+   orders: Int
+   ratin: Int
+   avg_rait: Float 
+   top_categories2: [String]
+} 
+
+type restaurantListOfItem {
+    item_price: Float
+    zip: String
+    restaurant_name: String 
+    total_quantity: Int 
+    total_orders:  Int 
+    liked_item: Int
+    like_percentage: Float
+    score: Int
+}
+
+
+type Query {
+
+
+  getRestaurant(id: ID): [Restaurant]
+    @cypher(
+      statement: """
+      MATCH (restaurant:Restaurant {id: $id}) RETURN restaurant
+      """,
+      columnName: "restaurant"
+    )
+  
+  getUser(id: ID): [User]
+    @cypher(
+      statement: """
+      MATCH (user:User {id: $id}) RETURN user
+      """,
+      columnName: "user"
+    )
+  
+  getOrder(id: ID): [Order]
+    @cypher(
+      statement: """
+      MATCH (order:Order {id: $id}) RETURN order
+      """,
+      columnName: "order"
+    )
+  
+  getState(name: String): [State]
+    @cypher(
+      statement: """
+      MATCH (state:State {name: $name}) RETURN state
+      """,
+      columnName: "state"
+    )
+  
+  getZipcode(zipcode: String): [Zipcode]
+    @cypher(
+      statement: """
+      MATCH (zipcode:Zipcode {zipcode: $zipcode}) RETURN zipcode
+      """,
+      columnName: "zipcode"
+    )
+  
+  getCategory(name: String): [Category]
+    @cypher(
+      statement: """
+      MATCH (category:Category {name: $name}) RETURN category
+      """,
+      columnName: "category"
+    )
+  
+  getItem(id: ID): [Item]
+    @cypher(
+      statement: """
+      MATCH (item:Item {id: $id}) RETURN item
+      """,
+      columnName: "item"
+    )
+  getRestaurantsByZipcode(zipcode: String!): [Restaurant]
+    @cypher(
+      statement: """
+      MATCH (r:Restaurant)-[:IS_FROM]->(z:Zipcode {zipcode: $zipcode})
+      RETURN r {.*, inRegion: z}
+      """,
+      columnName: "r"
+    )
+  getMonthlySalesByRestaurant(year: Int!): [SalesReport]
+    @cypher(
+      statement: """
+      MATCH (r:Restaurant)-[:HAS_ORDER]->(o:Order)
+      WHERE toInteger(SPLIT(toString(o.date), "-")[0]) = $year
+      WITH r.name AS restaurant, toFloat(o.total_price) AS total_price, toInteger(SPLIT(toString(o.date), "-")[1]) AS month
+      
+      WITH 
+        restaurant, 
+        COLLECT({month: month, total_price: total_price}) AS monthly_sales
+
+      RETURN {
+        restaurant: restaurant,
+        Jan_sales: REDUCE(s = 0, entry IN monthly_sales | s + CASE WHEN entry.month = 1 THEN entry.total_price ELSE 0 END),
+        Feb_sales: REDUCE(s = 0, entry IN monthly_sales | s + CASE WHEN entry.month = 2 THEN entry.total_price ELSE 0 END),
+        Mar_sales: REDUCE(s = 0, entry IN monthly_sales | s + CASE WHEN entry.month = 3 THEN entry.total_price ELSE 0 END),
+        Apr_sales: REDUCE(s = 0, entry IN monthly_sales | s + CASE WHEN entry.month = 4 THEN entry.total_price ELSE 0 END),
+        May_sales: REDUCE(s = 0, entry IN monthly_sales | s + CASE WHEN entry.month = 5 THEN entry.total_price ELSE 0 END),
+        Jun_sales: REDUCE(s = 0, entry IN monthly_sales | s + CASE WHEN entry.month = 6 THEN entry.total_price ELSE 0 END),
+        Jul_sales: REDUCE(s = 0, entry IN monthly_sales | s + CASE WHEN entry.month = 7 THEN entry.total_price ELSE 0 END),
+        Aug_sales: REDUCE(s = 0, entry IN monthly_sales | s + CASE WHEN entry.month = 8 THEN entry.total_price ELSE 0 END),
+        Sep_sales: REDUCE(s = 0, entry IN monthly_sales | s + CASE WHEN entry.month = 9 THEN entry.total_price ELSE 0 END),
+        Oct_sales: REDUCE(s = 0, entry IN monthly_sales | s + CASE WHEN entry.month = 10 THEN entry.total_price ELSE 0 END),
+        Nov_sales: REDUCE(s = 0, entry IN monthly_sales | s + CASE WHEN entry.month = 11 THEN entry.total_price ELSE 0 END),
+        Dec_sales: REDUCE(s = 0, entry IN monthly_sales | s + CASE WHEN entry.month = 12 THEN entry.total_price ELSE 0 END),
+        Yearly_sales: REDUCE(s = 0, entry IN monthly_sales | s + entry.total_price)
+      } AS SalesReport
+      ORDER BY SalesReport.Yearly_sales DESC
+      """,
+      columnName: "SalesReport"
+    )
+  getMostDislikedItems: [DislikedItemReport]
+    @cypher(
+      statement: """
+      MATCH (r:Restaurant)-[:HAS_ORDER]->(o:Order)-[d:DISLIKED]->(i:Item)<-[in:INCLUDES]-()
+      WITH 
+          r.id AS restaurant_id, 
+          r.name AS restaurant_name, 
+          i.name AS item_name, 
+          count(DISTINCT d) AS disliked_count, 
+          count(DISTINCT in) AS total_count,
+          toFloat(count(DISTINCT d)) / toFloat(count(DISTINCT in)) AS dislike_ratio 
+      ORDER BY dislike_ratio DESC 
+      LIMIT 20
+      RETURN {
+          restaurant_id: restaurant_id,
+          restaurant_name: restaurant_name,
+          item_name: item_name,
+          disliked_count: disliked_count,
+          total_count: total_count,
+          dislike_ratio: dislike_ratio,
+          interpretation: 
+            CASE 
+                WHEN dislike_ratio = 1.0 THEN "Everyone disliked it"
+                WHEN dislike_ratio >= 0.8 THEN "4 in 5 disliked it"
+                WHEN dislike_ratio >= 0.66 THEN "2 in 3 disliked it"
+                WHEN dislike_ratio >= 0.50 THEN "1 in 2 disliked it"
+                WHEN dislike_ratio >= 0.40 THEN "2 in 5 disliked it"
+                WHEN dislike_ratio >= 0.33 THEN "1 in 3 disliked it"
+                WHEN dislike_ratio >= 0.25 THEN "1 in 4 disliked it"
+                ELSE "Less than 1 in 4 disliked it"
+            END
+      } AS DislikedItemReport
+      ORDER BY DislikedItemReport.dislike_ratio DESC
+      """,
+      columnName: "DislikedItemReport"
+    )
+  getMostLikedItems: [LikedItemReport]
+    @cypher(
+      statement: """
+      MATCH (r:Restaurant)-[:HAS_ORDER]->(o:Order)-[d:LIKED]->(i:Item)<-[in:INCLUDES]-()
+      WITH 
+          r.id AS restaurant_id, 
+          r.name AS restaurant_name, 
+          i.name AS item_name, 
+          count(DISTINCT d) AS liked_count, 
+          count(DISTINCT in) AS total_count,
+          toFloat(count(DISTINCT d)) / toFloat(count(DISTINCT in)) AS like_ratio 
+      ORDER BY like_ratio DESC 
+      LIMIT 20
+      RETURN {
+          restaurant_id: restaurant_id,
+          restaurant_name: restaurant_name,
+          item_name: item_name,
+          liked_count: liked_count,
+          total_count: total_count,
+          like_ratio: like_ratio,
+          interpretation: 
+            CASE 
+                WHEN like_ratio = 1.0 THEN "Everyone liked it"
+                WHEN like_ratio >= 0.8 THEN "4 in 5 liked it"
+                WHEN like_ratio >= 0.66 THEN "2 in 3 liked it"
+                WHEN like_ratio >= 0.50 THEN "1 in 2 liked it"
+                WHEN like_ratio >= 0.40 THEN "2 in 5 liked it"
+                WHEN like_ratio >= 0.33 THEN "1 in 3 liked it"
+                WHEN like_ratio >= 0.25 THEN "1 in 4 liked it"
+                ELSE "Less than 1 in 4 liked it"
+            END
+      } AS LikedItemReport
+      ORDER BY LikedItemReport.like_ratio DESC
+      """,
+      columnName: "LikedItemReport"
+    )
+  getMonthlyTopSellingItems(year: Int!): [TopSellingReport]
+    @cypher(
+    statement: """
+      MATCH (r:Restaurant)-[:HAS_ORDER]->(o:Order)-[:INCLUDES]->(i:Item)
+      WHERE toInteger(SPLIT(toString(o.date), "-")[0]) = $year
+      WITH  
+        r.name AS restaurant,  
+        toInteger(SPLIT(toString(o.date), "-")[1]) AS month,  
+        i.name AS item,  
+        COUNT(i) AS total_sold
+        ORDER BY total_sold DESC  
+
+      WITH  
+        month,  
+        restaurant,  
+        COLLECT({item: item, total_sold: total_sold})[0] AS top_selling,
+        SUM(total_sold) AS total_monthly_orders  
+
+      WITH 
+        restaurant,
+        {
+          Restaurant: restaurant,
+          January: MAX(CASE WHEN month = 1 THEN top_selling.item + " (" + toString(ROUND((top_selling.total_sold * 100.0) / total_monthly_orders, 2)) + "%)" END),
+          February: MAX(CASE WHEN month = 2 THEN top_selling.item + " (" + toString(ROUND((top_selling.total_sold * 100.0) / total_monthly_orders, 2)) + "%)" END),
+          March: MAX(CASE WHEN month = 3 THEN top_selling.item + " (" + toString(ROUND((top_selling.total_sold * 100.0) / total_monthly_orders, 2)) + "%)" END),
+          April: MAX(CASE WHEN month = 4 THEN top_selling.item + " (" + toString(ROUND((top_selling.total_sold * 100.0) / total_monthly_orders, 2)) + "%)" END),
+          May: MAX(CASE WHEN month = 5 THEN top_selling.item + " (" + toString(ROUND((top_selling.total_sold * 100.0) / total_monthly_orders, 2)) + "%)" END),
+          June: MAX(CASE WHEN month = 6 THEN top_selling.item + " (" + toString(ROUND((top_selling.total_sold * 100.0) / total_monthly_orders, 2)) + "%)" END),
+          July: MAX(CASE WHEN month = 7 THEN top_selling.item + " (" + toString(ROUND((top_selling.total_sold * 100.0) / total_monthly_orders, 2)) + "%)" END),
+          August: MAX(CASE WHEN month = 8 THEN top_selling.item + " (" + toString(ROUND((top_selling.total_sold * 100.0) / total_monthly_orders, 2)) + "%)" END),
+          September: MAX(CASE WHEN month = 9 THEN top_selling.item + " (" + toString(ROUND((top_selling.total_sold * 100.0) / total_monthly_orders, 2)) + "%)" END),
+          October: MAX(CASE WHEN month = 10 THEN top_selling.item + " (" + toString(ROUND((top_selling.total_sold * 100.0) / total_monthly_orders, 2)) + "%)" END),
+          November: MAX(CASE WHEN month = 11 THEN top_selling.item + " (" + toString(ROUND((top_selling.total_sold * 100.0) / total_monthly_orders, 2)) + "%)" END),
+          December: MAX(CASE WHEN month = 12 THEN top_selling.item + " (" + toString(ROUND((top_selling.total_sold * 100.0) / total_monthly_orders, 2)) + "%)" END)
+        } AS TopSellingReport
+      RETURN TopSellingReport
+      ORDER BY restaurant DESC
+    """,
+    columnName: "TopSellingReport"
+    )
+
+  getSuggestedItems(userId : String!): [SuggestedItem]
+    @cypher(
+      statement: """
+        MATCH (u:User {userId: $userId})<-[:ORDERED_BY]-(o:Order)-[in:INCLUDES]->(it:Item)<-[:HAS_ITEM]-(ca:Category)
+        WITH ca.name AS category_name, SUM(in.quantity) AS total_quantity
+        ORDER BY total_quantity DESC
+        LIMIT 3
+
+        WITH collect(category_name) AS top_categories
+        UNWIND top_categories AS category
+
+        MATCH (c:Category {name: category})-[:HAS_ITEM]->(i:Item)
+        OPTIONAL MATCH (i)<-[:LIKED]-(likedOrder:Order)
+        OPTIONAL MATCH (i)<-[:INCLUDES]-(includedOrder:Order)
+
+        WITH category, i.name AS recommended_item,
+        COUNT(DISTINCT likedOrder) AS like_count,
+        COUNT(DISTINCT includedOrder) AS order_count
+
+        ORDER BY category, like_count DESC, order_count DESC
+        WITH category, collect({recommended_item: recommended_item, like_count: like_count, order_count: order_count})[0..3] AS top_items
+
+        UNWIND top_items AS item
+        RETURN{ item_name: item.recommended_item, 
+        itemCategory: category , 
+        likedTotal: item.like_count, 
+        orderCount: item.order_count} AS SuggestedItem
+
+      """,
+      columnName: "SuggestedItem"
+    )
+  getRecommendedRestaurants(userId: ID!): [RecommendedRestaurant]
+    @cypher(
+      statement: """
+      MATCH (u:User {id: $userId})-[:LIVES_IN]->(:Zipcode)-[:LIES_IN]->(c:City)
+
+      CALL {
+          WITH u
+          MATCH (u)<-[:ORDERED_BY]-(o:Order)-[in:INCLUDES]->(i:Item)<-[:HAS_ITEM]-(ca:Category)
+          RETURN ca.name AS category, SUM(in.quantity) AS total_ordered
+      }
+      WITH u, c, collect({category: category, total: total_ordered}) AS userCategories
+
+      UNWIND userCategories AS uc
+      MATCH (r:Restaurant)-[:IS_FROM]->(:Zipcode)-[:LIES_IN]->(c)
+      MATCH (r)-[:HAVE]->(i:Item)<-[:HAS_ITEM]-(cat:Category {name: uc.category})
+      OPTIONAL MATCH (i)<-[li:LIKED]-()
+      WITH r.name AS resname, r.id AS res_id, uc.category AS category, COUNT(i) AS itemCount, COUNT(li) AS likes
+
+      RETURN resname, res_id, category, itemCount, likes
+      LIMIT 10
+      """,
+      columnName: "RecommendedRestaurant"
+    )
+
+  searchByName(name: String!): [SearchResult]
+   @cypher(
+      statement: """
+     MATCH (n)
+     WHERE n.name STARTS WITH $name
+     
+     RETURN n
+    """,
+    columnName: "n"
+  ) 
+  getMostPopularFoodItem: [popularItem]
+  @cypher (
+    statement: """
+      MATCH (i:Item)
+      CALL {
+       WITH i
+       OPTIONAL MATCH (i)<-[in:INCLUDES]-(o:Order)
+       RETURN i.name AS item_name, COUNT(in) AS number_of_item
+      }
+      CALL {
+        WITH i
+        OPTIONAL MATCH (i)<-[li:LIKED]-(o:Order)
+        RETURN COUNT(li) AS liked, i.name AS item_name2
+      } 
+
+      with item_name, SUM(number_of_item) AS orderCount, SUM(liked) AS likedTotal
+      RETURN 
+       { item_name : item_name,
+        orderCount: orderCount ,
+        likedTotal: likedTotal} AS popularItem 
+        ORDER BY popularItem.orderCount DESC
+        LIMIT 15
+ 
+        """,
+      columnName: "popularItem"
+    )
+  getRestaurantItems(restaurantId: String!): [restaurantItem]
+    @cypher(
+     statement: """
+      MATCH (res:Restaurant {restaurantId: $restaurantId})-[:HAVE]->(it:Item)
+      MATCH (it)<-[in:INCLUDES]-(o:Order)
+      WITH it, it.name AS item_name, SUM(in.quantity) AS order_item, COUNT(DISTINCT o) AS number_of_order
+      MATCH (it)<-[li:LIKED]-(o:Order)
+      WITH it, item_name, order_item, number_of_order, COUNT(li) AS liked_item
+      MATCH (it)<-[dis:DISLIKED]-(o:Order)
+      WITH it,it.itemId AS item_id, item_name, order_item, number_of_order, liked_item, COUNT(dis) AS disliked_item
+      RETURN {
+        item_id: item_id,
+        item_name: item_name,
+        number_of_order: number_of_order,
+        order_item: order_item,
+        liked_item: liked_item,
+        disliked_item: disliked_item,
+        liked_percentage: CASE 
+          WHEN number_of_order = 0 THEN 0 
+          ELSE round(toFloat(liked_item) / number_of_order * 100, 1)
+        END,
+        price: it.price
+      } AS restaurantItem
+      ORDER BY restaurantItem.liked_percentage DESC
+    """,
+    columnName: "restaurantItem"
+  )
+  getNearPopularRestaurant(cityName: String!): [NearPopularRestaurant]
+    @cypher (
+      statement: """
+        MATCH (ci:City {name: $cityName})<-[:LIES_IN]-(zip:Zipcode)<-[:IS_FROM]-(res:Restaurant)
+        OPTIONAL MATCH (res)-[:HAS_ORDER]->(o:Order)
+        WITH res, res.name AS res_name, COUNT(o) AS orders, SUM(o.rating) AS ratin
+        WHERE orders > 0  
+
+
+        OPTIONAL MATCH (res)-[:HAS_ORDER]->(:Order)-[:LIKED]->(i:Item)<-[:HAS_ITEM]-(ca:Category)
+        WITH res.restaurantId AS res_id, res_name, orders, ratin, ca.name AS cat_name,
+        COUNT(i) AS item_count
+        ORDER BY item_count DESC
+
+        WITH res_id, res_name, orders, ratin,
+        round(toFloat(ratin) / orders, 1) AS avg_rait,
+        COLLECT(cat_name)[..3] AS top_categories
+
+        RETURN {
+        res_id : res_id,
+        res_name :res_name, 
+        orders: orders, 
+        ratin: ratin, 
+        avg_rait: avg_rait, 
+        top_categories2: top_categories} AS NearPopularRestaurant
+        ORDER BY NearPopularRestaurant.avg_rait DESC
+        LIMIT 10
+
+
+      """,
+      columnName: "NearPopularRestaurant"
+    )
+
+  getRestaurantLisOfItem(cityName: String!, itemName: String!): [restaurantListOfItem] 
+    @cypher (
+      statement : """
+        MATCH (ci:City {name: $cityName})<-[:LIES_IN]-(z:Zipcode)<-[:IS_FROM]-(res:Restaurant)
+        WITH z.zipcode as zip, res
+        MATCH (i:Item {name : $itemName})<-[:HAVE]-(res)
+        WITH i , res,zip
+        MATCH (i)<-[li:LIKED]-(o1:Order)
+        WITH i, res, COUNT(li) AS liked_item, zip
+        MATCH (i)<-[in:INCLUDES]-(o2:Order)
+        WITH i.price AS item_price, res.name AS restaurant_name, 
+          SUM(in.quantity) AS total_quantity, 
+          COUNT(o2) AS total_orders, zip,
+          liked_item,
+          (toFloat(liked_item) / COUNT(o2)) * 100 AS like_percentage
+        RETURN {
+         item_price: item_price,
+         zip: zip,
+         restaurant_name: restaurant_name, 
+         total_quantity: total_quantity, 
+         total_orders: total_orders, 
+         liked_item: liked_item,
+         like_percentage: like_percentage,
+         score: CASE 
+           WHEN like_percentage > 90 THEN 5
+           WHEN like_percentage > 70 THEN 4
+           WHEN like_percentage > 55 THEN 3
+           WHEN like_percentage > 40 THEN 2
+           WHEN like_percentage >= 1 THEN 1
+           ELSE 0
+          END } AS restaurantListOfItem
+        ORDER BY restaurantListOfItem.like_percentage DESC
+
+      """,
+      columnName: "restaurantListOfItem"
+    )
+
+}

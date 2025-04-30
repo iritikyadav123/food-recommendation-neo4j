@@ -1,0 +1,197 @@
+type Restaurant 
+  @node 
+  @query(aggregate: false) 
+  @mutation(operations: []) 
+{
+  id: ID!
+    @cypher(
+      statement: """
+      MATCH (this) RETURN id(this) AS n
+      """,
+      columnName: "n"
+    )
+  name: String
+
+  inRegion: Zipcode! @relationship(type: "IS_FROM", direction: OUT)
+  resOrder: [Order] @relationship(type: "HAS_ORDER", direction: OUT)
+  resItem: [Item] @relationship(type: "HAVE", direction: OUT)
+}
+
+type User 
+  @node 
+  @query(aggregate: false) 
+  @mutation(operations: [])
+{
+  id: ID!
+    @cypher(
+      statement: """
+      MATCH (this) RETURN id(this) AS n
+      """,
+      columnName: "n"
+    )
+  name: String
+  email: String
+  age: Int
+  gender: String
+
+  livesIN: Zipcode! @relationship(type: "LIVES_IN", direction:OUT)
+  orderDel: [Order] @relationship(type: "ORDERED_BY", direction: IN)
+}
+
+type State 
+  @node 
+  @query(aggregate: false) 
+  @mutation(operations: [])
+{
+  name: String!
+    @cypher(
+      statement: """
+      MATCH (this) RETURN this.name AS n
+      """,
+      columnName: "n"
+    )
+  cities: [City] @relationship(type: "IS_IN", direction: IN) 
+}
+
+type City 
+  @node 
+  @query(aggregate: false) 
+  @mutation(operations: [])
+{
+  name: String!
+  hasZipcodes: [Zipcode] @relationship(type: "LIES_IN", direction: IN)
+}
+
+type Zipcode 
+  @node 
+  @query(aggregate: false) 
+  @mutation(operations: [])
+{
+  zipcode: String!
+    @cypher(
+      statement: """
+      MATCH (this) RETURN this.zipcode AS n
+      """,
+      columnName: "n"
+    )
+  
+  hasCity: City @relationship(type: "LIES_IN", direction: OUT)
+  hasRes: [Restaurant] @relationship(type: "IS_FROM", direction: IN)
+}
+
+type Category 
+  @node 
+  @query(aggregate: false) 
+  @mutation(operations: [])
+{
+  name: String!
+    @cypher(
+      statement: """
+      MATCH (this) RETURN this.name AS n
+      """,
+      columnName: "n"
+    )
+  hasItem: [Item] @relationship(type: "HAS_ITEM", direction: OUT)
+}
+
+type Item 
+  @node 
+  @query(aggregate: false) 
+  @mutation(operations: [])
+{
+  id: ID!
+    @cypher(
+      statement: """
+      MATCH (this) RETURN id(this) AS n
+      """,
+      columnName: "n"
+    )
+  name: String
+  price: Float
+
+  itemCategory: [Category] @relationship(type: "HAS_ITEM", direction: IN)  
+  itemBelongTo: Restaurant @relationship(type: "HAVE", direction: IN)
+  likeReview: [Order] @relationship(type: "LIKED", direction: IN)
+  dislikeReview: [Order] @relationship(type: "DISLIKED", direction: IN)
+  containedBy: [Order] @relationship(type: "INCLUDE", direction: IN) 
+}
+
+type Order 
+  @node 
+  @query(aggregate: false) 
+  @mutation(operations: [])
+{
+  id: ID!
+    @cypher(
+      statement: """
+      MATCH (this) RETURN id(this) AS n
+      """,
+      columnName: "n"
+    )
+  pay_mode: String
+  total_price: Float
+  rating: Int
+
+  orderBy: Restaurant @relationship(type: "HAS_ORDER", direction: IN)
+  likeItem: [Item] @relationship(type: "LIKED", direction: OUT)
+  disLikeItem: [Item] @relationship(type: "DISLIKED", direction: OUT)
+  totalItem: [Item] @relationship(type: "INCLUDE", direction: OUT)
+}
+
+type Query {
+  getRestaurant(id: ID): [Restaurant]
+    @cypher(
+      statement: """
+      MATCH (restaurant:Restaurant {id: $id}) RETURN restaurant
+      """,
+      columnName: "restaurant"
+    )
+  
+  getUser(id: ID): [User]
+    @cypher(
+      statement: """
+      MATCH (user:User {id: $id}) RETURN user
+      """,
+      columnName: "user"
+    )
+  
+  getOrder(id: ID): [Order]
+    @cypher(
+      statement: """
+      MATCH (order:Order {id: $id}) RETURN order
+      """,
+      columnName: "order"
+    )
+  
+  getState(name: String): [State]
+    @cypher(
+      statement: """
+      MATCH (state:State {name: $name}) RETURN state
+      """,
+      columnName: "state"
+    )
+  
+  getZipcode(zipcode: String): [Zipcode]
+    @cypher(
+      statement: """
+      MATCH (zipcode:Zipcode {zipcode: $zipcode}) RETURN zipcode
+      """,
+      columnName: "zipcode"
+    )
+  
+  getCategory(name: String): [Category]
+    @cypher(
+      statement: """
+      MATCH (category:Category {name: $name}) RETURN category
+      """,
+      columnName: "category"
+    )
+  
+  getItem(id: ID): [Item]
+    @cypher(
+      statement: """
+      MATCH (item:Item {id: $id}) RETURN item
+      """,
+      columnName: "item"
+    )
+}
