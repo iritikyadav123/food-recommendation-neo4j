@@ -3,7 +3,7 @@ import RestaurantHeader from "@/components/restaurantHeader"
 import { Button } from "@/components/ui/button";
 import Image from "@/components/ui/image"
 import axios from "axios";
-import { Star } from "lucide-react"
+import { Heart, Star, ThumbsUp } from "lucide-react"
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
@@ -157,9 +157,8 @@ export default function RestaurantList() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-violet-100 text-white">
-      <div className="container mx-auto px-4 ">
-        <Navbar />
+    <div className="min-h-screen text-slate-900 bg-purple-100">
+       <Navbar />
         <div className="relative w-full h-[350px] md:h-[450px] overflow-hidden items-center justify-center">
           <Image
             src={imgSrc}
@@ -174,6 +173,9 @@ export default function RestaurantList() {
             {itemName}
           </div>
         </div>
+      <div className="container mx-auto px-4 ">
+       
+       
 
 
 
@@ -198,15 +200,22 @@ export default function RestaurantList() {
                         {restaurants[0].item_price}
                       </span>
                     </div>
-                    <div className="flex items-center mt-2 mb-4">
-                      <div className="flex items-center">
-                        <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-                        <span className="ml-1 text-yellow-400 font-medium">{restaurants[0].score}</span>
-                      </div>
-                      <span className="mx-2 text-gray-400">•</span>
-                      <span className="text-gray-400">{restaurants[0].total_orders} reviews</span>
-                      <span className="mx-2 text-gray-400">•</span>
-                      {/* <span className="text-purple-300">{restaurants.cuisine}</span> */}
+                    <div className="flex items-center mt-2 mb-4 ">
+                    <div className="flex items-center mb-3 justify-between gap-8">
+                    <div className="flex">
+                    <div className="flex items-center">
+                      <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                      <span className="ml-1 text-yellow-400 font-medium">{restaurants[0].score}</span>
+                    </div>
+
+                    <span className="mx-2 text-gray-400">•</span>
+                    <span className="text-gray-400">{restaurants[0].total_orders} reviews</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-pink-400">
+                    <Heart className="h-4 w-4" />
+                    <span className="text-sm">{Math.round(Number(restaurants[0].like_percentage))}% likes</span>
+                  </div>
+                  </div>
                     </div>
                     <p className="text-gray-300 mb-4">Experience the finest fusion cuisine with our award-winning chefs creating innovative dishes from around the world.</p>
                     <div className="text-gray-400 mb-1">
@@ -216,7 +225,7 @@ export default function RestaurantList() {
                       {/* <span className="font-medium text-purple-300">Hours:</span> {restaurants.openHours} */}
                     </div>
                     <button className="mt-6 bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition duration-300">
-                      Reserve a Table
+                      Menu
                     </button>
                   </div>
                 </div>
@@ -229,7 +238,7 @@ export default function RestaurantList() {
 
         <div>
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">All Restaurants</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Other Restaurants</h2>
             <div className="text-gray-900">
               <span className="font-bold">{(restaurants.length) - 1}</span> restaurants available
             </div>
@@ -254,13 +263,20 @@ export default function RestaurantList() {
                     <h3 className="text-xl font-bold text-white">{restaurant.restaurant_name}</h3>
                     <span className="bg-purple-700 text-white px-2 py-1 rounded text-xs font-bold">₹ {restaurant.item_price}</span>
                   </div>
-                  <div className="flex items-center mb-3">
+                  <div className="flex items-center mb-3 justify-between">
+                    <div className="flex">
                     <div className="flex items-center">
                       <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
                       <span className="ml-1 text-yellow-400 font-medium">{restaurant.score}</span>
                     </div>
+
                     <span className="mx-2 text-gray-400">•</span>
                     <span className="text-gray-400">{restaurant.total_orders} reviews</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-pink-400">
+                    <Heart className="h-4 w-4" />
+                    <span className="text-sm">{Math.round(Number(restaurant.like_percentage))}% likes</span>
+                  </div>
                   </div>
                   <div className="flex justify-between items-center">
                     {/* <span className="text-purple-300">{restaurant.cuisine}</span> */}
@@ -268,7 +284,7 @@ export default function RestaurantList() {
                       View Menu
                     </button>
                   </div>
-                  <div className="text-gray-400 text-sm mt-2"> {restaurant.zip}</div>
+                  <div className="text-gray-400 text-sm mt-2"><span className="font-medium text-purple-300">Address: </span> {restaurant.zip}</div>
                 </div>
               </div>
             ))}

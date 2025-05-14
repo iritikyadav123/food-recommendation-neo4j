@@ -193,6 +193,17 @@ type RecommendedRestaurant {
   likes: Int
 }
 
+type Category {
+  category: String
+}
+type Restaurant {
+  name: String
+  restaurantId: String
+}
+type Item {
+  name: String
+}
+
 union SearchResult = Category | Restaurant | Item 
 
 type popularItem {
@@ -231,6 +242,26 @@ type restaurantListOfItem {
     liked_item: Int
     like_percentage: Float
     score: Int
+}
+
+type searchResult1 {
+  itemName: String
+  itemLabel: String
+  itemId: String 
+}
+
+type CategoryRecommendation {
+  name: String
+  score: Int
+  type: String
+}
+
+type ItemStats {
+  itemName: String
+  soldQuantity: Int
+  totalOrders: Int
+  likedCount: Int
+  likedRating: Float
 }
 
 
@@ -508,9 +539,9 @@ type Query {
      RETURN n
     """,
     columnName: "n"
-  ) 
+   ) 
   getMostPopularFoodItem: [popularItem]
-  @cypher (
+    @cypher (
     statement: """
       MATCH (i:Item)
       CALL {
@@ -534,7 +565,7 @@ type Query {
  
         """,
       columnName: "popularItem"
-    )
+   )
   getRestaurantItems(restaurantId: String!): [restaurantItem]
     @cypher(
      statement: """
@@ -561,7 +592,7 @@ type Query {
       ORDER BY restaurantItem.liked_percentage DESC
     """,
     columnName: "restaurantItem"
-  )
+   )
   getNearPopularRestaurant(cityName: String!): [NearPopularRestaurant]
     @cypher (
       statement: """
@@ -630,6 +661,81 @@ type Query {
 
       """,
       columnName: "restaurantListOfItem"
+    )
+
+  searchByName1(itemName: String!, cityName: String!) : [searchResult1]
+    @cypher (
+
+    statement:  """
+      MATCH (n)
+      WHERE n.name STARTS WITH $itemName
+      WITH n, labels(n)[0] AS label
+      OPTIONAL MATCH path1 = (n:Restaurant)-[:IS_FROM]->(z:Zipcode)-[:LIES_IN]->(c:City {name: $cityName})
+      OPTIONAL MATCH path2 = (n:Item)<-[:HAVE]-(r:Restaurant)-[:IS_FROM]->(:Zipcode)-[:LIES_IN]->(:City {name: $cityName})
+      WITH n, label, path1, path2
+      WHERE 
+       (label = 'Restaurant' AND path1 IS NOT NULL) OR
+       (label = 'Item' AND path2 IS NOT NULL) OR
+       (label = 'Category')
+ 
+      RETURN DISTINCT {
+      itemName:  n.name , 
+      itemLabel: label,
+      itemId:
+      CASE 
+        WHEN label = 'Restaurant' THEN n.restaurantId 
+        ELSE null 
+      END  } AS searchResult1
+      """,
+      columnName: "searchResult1"
+    )
+
+  recommendedCategories(userId: ID!): [CategoryRecommendation]
+   @cypher(
+    statement: """
+    OPTIONAL MATCH (u:User {userId: $userId})<-[:ORDERED_BY]-(o:Order)-[:INCLUDES]->(i:Item)<-[:HAS_ITEM]-(c:Category)
+    WITH c.name AS categoryName, COUNT(i) AS itemCount
+    ORDER BY itemCount DESC
+    LIMIT 9
+    WITH collect(CASE WHEN categoryName IS NOT NULL THEN {name: categoryName, score: itemCount, type: 'ordered'} END) AS userCategories
+    OPTIONAL MATCH (c2:Category)-[:HAS_ITEM]->(:Item)<-[:LIKED]-(:Order)
+    WITH userCategories,
+         c2.name AS likedCategory,
+         COUNT(*) AS likeCount
+    ORDER BY likeCount DESC
+    LIMIT 9
+    WITH userCategories,
+         collect({name: likedCategory, score: likeCount, type: 'liked'}) AS likedCategories,
+         size([x IN userCategories WHERE x IS NOT NULL]) AS userCategoryCount
+    WITH CASE 
+           WHEN userCategoryCount > 0 THEN userCategories 
+           ELSE likedCategories 
+         END AS finalCategories
+    UNWIND finalCategories AS recommendedCategories
+    RETURN recommendedCategories
+    """,
+    columnName: "recommendedCategories"
+   )
+
+   topRatedItemsByCategory(categoryName: String!): [ItemStats]
+    @cypher(
+      statement: """
+      MATCH (c:Category {name: $categoryName})-[:HAS_ITEM]->(it:Item)
+      OPTIONAL MATCH (it)<-[in:INCLUDES]-(o1:Order)
+      WITH it.name AS item_name, SUM(in.quantity) AS sold_quantity, COUNT(o1) AS orders, it, o1
+      OPTIONAL MATCH (it)<-[li:LIKED]-(o1)
+      with item_name, SUM(sold_quantity) AS soldQuantity, SUM(orders) AS totalOrders, COUNT(li) AS likedCount, round(toFloat(COUNT(li)) / SUM(orders) * 100, 2) AS likedRating
+      RETURN {  
+        itemName : item_name,
+        soldQuantity : soldQuantity ,
+        totalOrders : totalOrders,
+        likedCount : likedCount,
+        likedRating : likedRating
+
+        } AS ItemStats
+      ORDER BY ItemStats.likedRating DESC
+      """,
+      columnName: "ItemStats"
     )
 
 }

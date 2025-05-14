@@ -4,17 +4,35 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useEffect, useState, useRef } from "react"
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+
+const cities = [
+    "Gwalior",
+    "Shivpuri",
+    "Rewa",
+    "Jabalpur",
+    "Morena",
+    "Guna",
+    "Ujjain",
+    "Indore",
+    "Ratlam",
+    "Bhopal",
+];
 
 
 const HeroSection = () => {
-    const [searchValue, getSearchValue] = useState("")
-    const [searchItem, getSearchItem] = useState([])
+    const [searchValue, setSearchValue] = useState("");
+    const [searchItem, setSearchItem] = useState<any[]>([]);
     const [isSelecting, setIsSelecting] = useState(false)
+    const [searchCity, setSearchCity] = useState<string>('Gwalior');
+    const [selectedValue, setSelectedValue] = useState<any>({})
     const dropdownRef = useRef(null);
+    const navigation = useNavigate();
 
     type CategoryResult = {
         __typename: "Category";
         categoryName: string;
+
     };
 
     type RestaurantResult = {
@@ -35,19 +53,12 @@ const HeroSection = () => {
         if (!searchValue) return;
 
         const query = `
-            query SearchByName($name: String!) {
-                searchByName(name: $name) {
-                    __typename
-                ... on Category {
-                categoryName: name
-             }
-                ... on Restaurant {
-                restaurantName: name
-            }
-                ... on Item {
-                    itemName: name
-            }
-        }
+            query searchByName1($itemName: String!, $cityName: String!) {
+                searchByName1(itemName: $itemName, cityName: $cityName) {
+                  itemName
+                  itemLabel
+                  itemId
+               }
         }
         `;
         const fetchData = async () => {
@@ -56,24 +67,30 @@ const HeroSection = () => {
                     "http://localhost:4000/",
                     {
                         query,
-                        variables: { name: searchValue.split(" ").map(w => w[0].toUpperCase() + w.slice(1)).join(" ") },
+                        variables: { itemName: searchValue.split(" ").map(w => w[0].toUpperCase() + w.slice(1)).join(" "),cityName: searchCity },
                     },
                     { headers: { "Content-Type": "application/json" } }
                 );
-
-                getSearchItem(response.data.data.searchByName);
-                console.log(response.data.data.searchBy)
+                setSearchItem(response.data.data.searchByName1);
+                console.log(response.data.data.searchByName1)
             } catch (error) {
                 console.error("GraphQL query error:", error);
             }
         };
 
-        fetchData();
+        const timeout = setTimeout(() => {
+            if (searchValue) {
+                fetchData();
+            }
+        }, 300);
+
+        return () => clearTimeout(timeout);
     }, [searchValue]);
+
     useEffect(() => {
-        const handleClickOrScroll = (e:any) => {
+        const handleClickOrScroll = (e: any) => {
             if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-                getSearchItem([]);
+                setSearchItem([]);
             }
         };
 
@@ -88,13 +105,30 @@ const HeroSection = () => {
 
     const choseItem = (itemName: string) => {
         setIsSelecting(true)
-        getSearchValue(itemName)
-        getSearchItem([])
+        setSearchValue(itemName)
 
         setTimeout(() => {
             setIsSelecting(false)
         }, 200)
     }
+
+
+    const userSerachItem = () => {
+        if (selectedValue && selectedValue.itemLabel === 'Item') {
+            navigation(`/restaurantList/?itemName=${selectedValue.itemName}&cityName=${searchCity.trim()}`)
+        }
+        else if (selectedValue && selectedValue.itemLabel === 'Restaurant') {
+            navigation(`/restaurantItemList/?id=${selectedValue.itemId}&name=${selectedValue.itemName}`);
+        }
+
+    }
+
+    const userSelectItem = (userSelectItem: any) => {
+        setSelectedValue(userSelectItem)
+        setSearchValue(userSelectItem.itemName)
+        setSearchItem([])
+    }
+
 
 
     return (
@@ -116,7 +150,7 @@ const HeroSection = () => {
                     <div className="flex-1 flex items-center px-3 rounded-md border border-slate-700 bg-slate-800">
                         <Search className="h-5 w-5 text-slate-400 mr-2" />
                         <Input
-                            onChange={(e) => { getSearchValue(e.target.value) }}
+                            onChange={(e) => { choseItem(e.target.value) }}
                             value={searchValue}
                             type="text"
                             placeholder="Search for restaurants, cuisines, or dishes"
@@ -125,55 +159,50 @@ const HeroSection = () => {
                     </div>
                     <div className="flex items-center px-3 rounded-md border border-slate-700 bg-slate-800">
                         <MapPin className="h-5 w-5 text-slate-400 mr-2" />
-                        <Input
+                        {/* <Input
+                           
+                            
                             type="text"
                             placeholder="Location"
                             className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent text-slate-200 w-[150px]"
-                        />
+                        /> */}
+                        <select
+                            value={searchCity}
+                            onChange={(e) => setSearchCity(e.target.value)}
+                            className="border-0 border-slate-800 focus-visible:ring-0 focus-visible:ring-offset-0  text-slate-400 w-[150px] border-none bg-slate-800"
+                        >
+                            <option value="" disabled>Select city</option>
+                            {cities.map((city) => (
+                                <option key={city} value={city}  >
+                                    {city}
+                                </option>
+                            ))}
+                        </select>
+
+                        {/* {selectedCity && (
+                            <p className="mt-4 text-slate-400 text-lg">
+                               <strong>{selectedCity}</strong>
+                            </p>
+                        )} */}
                     </div>
-                    <Button className="bg-purple-700 hover:bg-purple-800 text-white">Search</Button>
+                    <Button onClick={userSerachItem} className="bg-purple-700 hover:bg-purple-800 text-white">Search</Button>
 
 
                 </div>
-                {/* {searchItem.map((item, index) => {
-                // let displayName = "";
-                // if (item.__typename === "Restaurant") displayName = item.restaurant;
-                // else if (item.__typename === "Category") displayName = item.category;
-                // else if (item.__typename === "Item") displayName = item.item;
 
-                return (
-                    <div
-                        onClick={() => choseItem(item.name)}
-                        className="hover:bg-slate-800/50 hover:rounded-lg pl-6 cursor-pointer mr-4"
-                        key={index}
-                    >
-                        {item.name}
-                    </div>
-                );
-            })} */}
-
-                {(searchItem.length > 1 && searchValue)  && (
+                {(searchItem.length > 0 && searchValue && !isSelecting) && (
                     <div
                         ref={dropdownRef}
                         className="sticky max-h-xl overflow-y-scroll  left-0 bg-slate-800/90 backdrop-blur w-full max-w-3xl rounded-lg p-2">
-                        {searchItem.map((item: SearchResult, index) => {
-                            let displayName = "";
-
-                            if (item.__typename === "Category") {
-                                displayName = item.categoryName;
-                            } else if (item.__typename === "Restaurant") {
-                                displayName = item.restaurantName;
-                            } else if (item.__typename === "Item") {
-                                displayName = item.itemName;
-                            }
+                        {searchItem.map((item: any, index) => {
 
                             return (
                                 <div
-                                    onClick={() => choseItem(displayName)}
+                                    onClick={() => userSelectItem(item)}
                                     className="hover:bg-slate-700/90 hover:rounded-lg pl-6 cursor-pointer mr-4"
                                     key={index}
                                 >
-                                    {displayName}
+                                    {item.itemName}
                                 </div>
                             );
                         })}
