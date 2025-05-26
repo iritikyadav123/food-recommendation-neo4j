@@ -263,6 +263,21 @@ type ItemStats {
   likedCount: Int
   likedRating: Float
 }
+type restaurantMetrixProps {
+  restaurantName: String
+  prevAmount: Float
+  currentAmount: Float
+  currentOrder: Int
+  prevOrder: Int
+  currentAvgOrder: Float
+  prevAvgOrder: Float
+  satisfiedCustomer: Float
+  lastMonthsatisfiedCustomer: Float
+  revenueChangePercent: Float
+  orderChangePercent: Float
+  avgOrderValueChangePercent: Float
+  satifycoutomerSenrio: Float
+}
 
 
 type Query {
@@ -666,7 +681,7 @@ type Query {
   searchByName1(itemName: String!, cityName: String!) : [searchResult1]
     @cypher (
 
-    statement:  """
+     statement:  """
       MATCH (n)
       WHERE n.name STARTS WITH $itemName
       WITH n, labels(n)[0] AS label
@@ -717,7 +732,7 @@ type Query {
     columnName: "recommendedCategories"
    )
 
-   topRatedItemsByCategory(categoryName: String!): [ItemStats]
+  topRatedItemsByCategory(categoryName: String!): [ItemStats]
     @cypher(
       statement: """
       MATCH (c:Category {name: $categoryName})-[:HAS_ITEM]->(it:Item)
@@ -737,5 +752,74 @@ type Query {
       """,
       columnName: "ItemStats"
     )
+
+  restaurantMetrix(restaurantId: String!,startCurrent: String!,endCurrent: String!, startPrev: String!, endPrev: String!): [restaurantMetrixProps]
+      @cypher(
+        statement: """
+          WITH 
+            date($startCurrent) AS startCurrent, 
+            date($endCurrent) AS endCurrent,
+            date($startPrev) AS startPrev, 
+            date($endPrev) AS endPrev
+
+          MATCH (res:Restaurant {restaurantId: $restaurantId})-[:HAS_ORDER]->(order:Order)
+          WITH res, order, startCurrent, endCurrent, startPrev, endPrev,
+            CASE 
+              WHEN date(order.date) > startCurrent AND date(order.date) < endCurrent THEN "current"
+              WHEN date(order.date) > startPrev AND date(order.date) < endPrev THEN "previous"
+              ELSE null
+            END AS period
+          WHERE period IS NOT NULL
+
+          WITH 
+            res, startCurrent, endCurrent, startPrev, endPrev,
+            collect(order) AS allOrders
+
+          WITH 
+            res, startCurrent, endCurrent, startPrev, endPrev,
+            [o IN allOrders WHERE date(o.date) > startCurrent AND date(o.date) < endCurrent] AS currentOrders,
+            [o IN allOrders WHERE date(o.date) > startPrev AND date(o.date) < endPrev] AS prevOrders,
+            [o IN allOrders WHERE date(o.date) > startCurrent AND date(o.date) < endCurrent AND o.rating > 2] AS currentSatisfied,
+            [o IN allOrders WHERE date(o.date) > startPrev AND date(o.date) < endPrev AND o.rating > 2] AS prevSatisfied
+
+          WITH 
+            res,
+            reduce(sum = 0.0, o IN currentOrders | sum + o.total_price) AS currentAmount,
+            size(currentOrders) AS currentOrder,
+            reduce(sum = 0.0, o IN prevOrders | sum + o.total_price) AS prevAmount,
+            size(prevOrders) AS prevOrder,
+            size(currentSatisfied) AS satisfiedCount,
+            size(prevSatisfied) AS prevSatisfiedCount
+
+          WITH 
+            res,
+            currentAmount,
+            currentOrder,
+            prevAmount,
+            prevOrder,
+            satisfiedCount,
+            prevSatisfiedCount,
+            CASE WHEN currentOrder = 0 THEN 0 ELSE round(currentAmount / currentOrder, 2) END AS currentAvgOrder,
+            CASE WHEN prevOrder = 0 THEN 0 ELSE round(prevAmount / prevOrder, 2) END AS prevAvgOrder
+
+        RETURN{
+          restaurantName: res.name,
+          prevAmount: prevAmount,
+          currentAmount: currentAmount,
+          currentOrder: currentOrder,
+          prevOrder: prevOrder,
+          currentAvgOrder: currentAvgOrder,
+          prevAvgOrder: prevAvgOrder,
+
+          satisfiedCustomer: CASE WHEN currentOrder = 0 THEN 0 ELSE round(toFloat(satisfiedCount) / currentOrder * 100, 2) END ,
+          lastMonthsatisfiedCustomer: CASE WHEN currentOrder = 0 THEN 0 ELSE round(toFloat(prevSatisfiedCount) / currentOrder * 100, 2) END,
+          revenueChangePercent: CASE WHEN prevAmount = 0 THEN 0 ELSE round((currentAmount - prevAmount) / prevAmount * 100, 2) END ,
+          orderChangePercent: CASE WHEN prevOrder = 0 THEN 0 ELSE round(toFloat(currentOrder - prevOrder) / prevOrder * 100, 2) END,
+          avgOrderValueChangePercent: CASE WHEN prevAvgOrder = 0 THEN 0 ELSE round((currentAvgOrder - prevAvgOrder) / prevAvgOrder * 100, 2) END ,
+          satifycoutomerSenrio: CASE WHEN prevSatisfiedCount = 0 THEN 0 ELSE round((toFloat(satisfiedCount - prevSatisfiedCount) / prevSatisfiedCount) * 100, 2) END
+          } AS restaurantMetrixProps
+        """,
+        columnName: "restaurantMetrixProps"
+      )
 
 }

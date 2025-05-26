@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   BarChart,
   Calendar,
@@ -19,12 +19,75 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Progress } from "@/components/ui/progress"
+import  Progress  from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import axios from "axios"
+
+interface restaurantMatrixProps {
+  restaurantName: string
+  currentAmount : number
+  currentOrder: number
+  prevOrder: number
+  currentAvgOrder: number
+  prevAvgOrder: number
+  satisfiedCustomer: number
+  lastMonthsatisfiedCustomer: number
+  revenueChangePercent: number
+  orderChangePercent:number
+  avgOrderValueChangePercent: number
+  satifycoutomerSenrio: number
+}
 
 export default function RestaurantAdmin() {
   const [activeTab, setActiveTab] = useState("overview")
+  const [restaurantMatrix, setRestaurantMatrix] = useState<restaurantMatrixProps>({} as restaurantMatrixProps)
+
+  useEffect(() => {
+    const query = `
+  query restaurantMetrix {
+     restaurantMetrix(
+      restaurantId: "459"
+      startCurrent: "2024-05-31",
+      endCurrent: "2024-07-01",
+      startPrev: "2024-04-30",
+      endPrev: "2024-06-01"
+    ) {
+      restaurantName
+      currentAmount
+      currentOrder
+      prevOrder
+      currentAvgOrder
+      prevAvgOrder
+      satisfiedCustomer
+      lastMonthsatisfiedCustomer
+      revenueChangePercent
+      orderChangePercent
+      avgOrderValueChangePercent
+      satifycoutomerSenrio
+    }
+  }
+`;
+    async function getItem() {
+      try {
+        const response = await axios.post(
+          "http://localhost:4000/",
+          {
+            query
+          },
+          { headers: { "Content-Type": "application/json" } }
+        );
+
+        const data = response.data.data.restaurantMetrix[0];
+        setRestaurantMatrix(data);
+      } catch (error) {
+        console.error("GraphQL query error:", error);
+      }
+
+    }
+    getItem();
+
+  }, [])
 
   return (
     <div className="flex min-h-screen bg-purple-100 text-slate-100 -mb-20">
@@ -156,7 +219,7 @@ export default function RestaurantAdmin() {
       <main className="flex-1 p-4 md:p-8">
         <div className="flex items-center justify-between pb-6">
           <div>
-            <h1 className="text-2xl font-bold ml-10 md:ml-0 text-slate-900">Restaurant Dashboard</h1>
+            <h1 className="text-2xl font-bold ml-10 md:ml-0 text-slate-900">{restaurantMatrix.restaurantName}</h1>
             <p className="text-slate-500">Monitor your restaurant's performance</p>
           </div>
           <div className="flex items-center gap-4">
@@ -169,10 +232,10 @@ export default function RestaurantAdmin() {
               <AvatarFallback className="bg-purple-700">JD</AvatarFallback>
             </Avatar>
           </div>
-        </div> 
+        </div>
 
         <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-slate-800 text-slate-100">
+          <TabsList className="grid w-full grid-cols-4 bg-slate-950 text-slate-100">
             <TabsTrigger className={`${activeTab != "overview" && "text-gray-100"}`} value="overview">Overview</TabsTrigger>
             <TabsTrigger className={`${activeTab != "hot-items" && "text-gray-100"}`} value="hot-items">Hot Items</TabsTrigger>
             <TabsTrigger className={`${activeTab != "trends" && "text-gray-100"}`} value="trends">Trends</TabsTrigger>
@@ -182,85 +245,85 @@ export default function RestaurantAdmin() {
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              <Card className="bg-slate-800 border-slate-700">
+              <Card className="bg-slate-950 border-slate-700">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-slate-400">Total Revenue</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center">
-                    <DollarSign className="h-5 w-5 text-purple-500 mr-2" />
-                    <div className="text-2xl text-gray-100 font-bold">$24,389</div>
+                    <span className="h-5 w-5 text-purple-500 mr-2 mb-3 text-2xl">₹</span>
+                    <div className="text-2xl text-gray-100 font-bold -ml-2">{Intl.NumberFormat('en-IN').format(restaurantMatrix.currentAmount)}</div>
                   </div>
-                  <p className="text-xs text-green-500 mt-1">+12.5% from last month</p>
+                  <p className={`text-xs  mt-1 ${restaurantMatrix.revenueChangePercent < 0 ? "text-red-500" : "text-green-500" }`}>{restaurantMatrix.revenueChangePercent < 0 ? "" : "+" }{restaurantMatrix.revenueChangePercent}% from last month</p>
                 </CardContent>
               </Card>
-              <Card className="bg-slate-800 border-slate-700">
+              <Card className="bg-slate-950 border-slate-700">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-slate-400">Total Orders</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center">
                     <CreditCard className="h-5 w-5 text-purple-500 mr-2" />
-                    <div className="text-2xl text-gray-100  font-bold">1,248</div>
+                    <div className="text-2xl text-gray-100  font-bold">{Intl.NumberFormat('en-IN').format(restaurantMatrix.currentOrder)}</div>
                   </div>
-                  <p className="text-xs text-green-500 mt-1">+8.2% from last month</p>
+                  <p className={`text-xs  mt-1 ${restaurantMatrix.orderChangePercent < 0 ? "text-red-500" : "text-green-500" }`}>{restaurantMatrix.orderChangePercent < 0 ? "" : "+" }{restaurantMatrix.orderChangePercent}% from last month</p>
                 </CardContent>
               </Card>
-              <Card className="bg-slate-800 border-slate-700">
+              <Card className="bg-slate-950 border-slate-700">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-slate-400">Avg. Order Value</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center">
                     <BarChart className="h-5 w-5 text-purple-500 mr-2" />
-                    <div className="text-2xl text-gray-100  font-bold">$19.54</div>
+                    <div className="text-2xl text-gray-100  font-bold">₹ {Intl.NumberFormat('en-IN').format(restaurantMatrix.currentAvgOrder)}</div>
                   </div>
-                  <p className="text-xs text-green-500 mt-1">+3.7% from last month</p>
+                  <p className={`text-xs  mt-1 ${restaurantMatrix.avgOrderValueChangePercent < 0 ? "text-red-500" : "text-green-500" }`}>{restaurantMatrix.avgOrderValueChangePercent < 0 ? "" : "+" }{restaurantMatrix.avgOrderValueChangePercent}% from last month</p>
                 </CardContent>
               </Card>
-              <Card className="bg-slate-800 border-slate-700">
+              <Card className="bg-slate-950 border-slate-700">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-slate-400">Customer Satisfaction</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center">
                     <Users className="h-5 w-5 text-purple-500 mr-2" />
-                    <div className="text-2xl text-gray-100  font-bold">92%</div>
+                    <div className="text-2xl text-gray-100  font-bold">{restaurantMatrix.satisfiedCustomer}%</div>
                   </div>
-                  <p className="text-xs text-red-500 mt-1">-1.2% from last month</p>
+                  <p className={`text-xs  mt-1 ${restaurantMatrix.satifycoutomerSenrio < 0 ? "text-red-500" : "text-green-500" }`}>{restaurantMatrix.satifycoutomerSenrio < 0 ? "" : "+" }{restaurantMatrix.satifycoutomerSenrio}% from last month</p>
                 </CardContent>
               </Card>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
-              <Card className="bg-slate-800 border-slate-700">
+              <Card className="bg-slate-950 border-slate-700">
                 <CardHeader>
                   <CardTitle className="text-gray-100 ">Sales Overview</CardTitle>
                   <CardDescription className="text-slate-400">Daily revenue for the past week</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="h-[200px] flex items-end gap-2">
-                    <div className="flex-1 bg-purple-900/20 hover:bg-purple-900/40 transition-colors rounded-sm h-[30%] relative group">
+                    <div className="flex-1 bg-purple-900/70 hover:bg-purple-900/90 transition-colors rounded-sm h-[30%] relative group">
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-700 text-white text-xs px-2 py-1 rounded">
                         $1,245
                       </div>
                     </div>
-                    <div className="flex-1 bg-purple-900/20 hover:bg-purple-900/40 transition-colors rounded-sm h-[45%] relative group">
+                    <div className="flex-1 bg-purple-900/70 hover:bg-purple-900/90 transition-colors rounded-sm h-[45%] relative group">
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-700 text-white text-xs px-2 py-1 rounded">
                         $1,876
                       </div>
                     </div>
-                    <div className="flex-1 bg-purple-900/20 hover:bg-purple-900/40 transition-colors rounded-sm h-[60%] relative group">
+                    <div className="flex-1 bg-purple-900/70 hover:bg-purple-900/90 transition-colors rounded-sm h-[60%] relative group">
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-700 text-white text-xs px-2 py-1 rounded">
                         $2,498
                       </div>
                     </div>
-                    <div className="flex-1 bg-purple-900/20 hover:bg-purple-900/40 transition-colors rounded-sm h-[40%] relative group">
+                    <div className="flex-1 bg-purple-900/70 hover:bg-purple-900/90 transition-colors rounded-sm h-[40%] relative group">
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-700 text-white text-xs px-2 py-1 rounded">
                         $1,654
                       </div>
                     </div>
-                    <div className="flex-1 bg-purple-900/20 hover:bg-purple-900/40 transition-colors rounded-sm h-[75%] relative group">
+                    <div className="flex-1 bg-purple-900/70 hover:bg-purple-900/90 transition-colors rounded-sm h-[75%] relative group">
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-700 text-white text-xs px-2 py-1 rounded">
                         $3,124
                       </div>
@@ -270,7 +333,7 @@ export default function RestaurantAdmin() {
                         $3,756
                       </div>
                     </div>
-                    <div className="flex-1 bg-purple-900/20 hover:bg-purple-900/40 transition-colors rounded-sm h-[65%] relative group">
+                    <div className="flex-1 bg-purple-900/70 hover:bg-purple-900/90 transition-colors rounded-sm h-[65%] relative group">
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-700 text-white text-xs px-2 py-1 rounded">
                         $2,687
                       </div>
@@ -288,7 +351,7 @@ export default function RestaurantAdmin() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-800 border-slate-700">
+              <Card className="bg-slate-950 border-slate-700">
                 <CardHeader>
                   <CardTitle className="text-gray-100 ">Top Categories</CardTitle>
                   <CardDescription className="text-slate-400">Most popular food categories</CardDescription>
@@ -299,28 +362,28 @@ export default function RestaurantAdmin() {
                       <span className="text-gray-100 ">Main Courses</span>
                       <span className="text-purple-400">42%</span>
                     </div>
-                    <Progress value={42} className="h-2 bg-slate-700" indicatorClassName="bg-purple-500" />
+                    <Progress value={42} class={"h-2 bg-slate-700"} barColor="bg-purple-500" />
                   </div>
                   <div>
                     <div className="flex justify-between mb-1 text-sm">
                       <span className="text-gray-100 ">Appetizers</span>
                       <span className="text-purple-400">28%</span>
                     </div>
-                    <Progress value={28} className="h-2 bg-slate-700" indicatorClassName="bg-purple-500" />
+                    <Progress value={28} class={"h-2 bg-slate-700"} barColor="bg-purple-500" />
                   </div>
                   <div>
                     <div className="flex justify-between mb-1 text-sm">
                       <span className="text-gray-100 ">Desserts</span>
                       <span className="text-purple-400">18%</span>
                     </div>
-                    <Progress value={18} className="h-2 bg-slate-700" indicatorClassName="bg-purple-500" />
+                    <Progress value={18} class={"h-2 bg-slate-700"} barColor="bg-purple-500" />
                   </div>
                   <div>
                     <div className="flex justify-between mb-1 text-sm">
                       <span className="text-gray-100 ">Beverages</span>
                       <span className="text-purple-400">12%</span>
                     </div>
-                    <Progress value={12} className="h-2 bg-slate-700 " indicatorClassName="bg-purple-500" />
+                    <Progress value={12} class={"h-2 bg-slate-700"} barColor="bg-purple-500" />
                   </div>
                 </CardContent>
               </Card>
@@ -330,7 +393,7 @@ export default function RestaurantAdmin() {
           {/* Hot Selling Items Tab */}
           <TabsContent value="hot-items" className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              <Card className="bg-slate-800 border-slate-700 overflow-hidden">
+              <Card className="bg-slate-950 border-slate-700 overflow-hidden">
                 <div className="h-40 bg-purple-900/20 relative">
                   <div className="absolute top-2 right-2">
                     <Badge className="bg-purple-600">Top Seller</Badge>

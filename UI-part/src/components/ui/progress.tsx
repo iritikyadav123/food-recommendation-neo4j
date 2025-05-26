@@ -1,29 +1,32 @@
-import * as React from "react"
-import * as ProgressPrimitive from "@radix-ui/react-progress"
+import React from "react";
 
-import { cn } from "@/lib/utils"
+type ProgressBarProps = {
+  value: number; // percentage (0-100)
+  barColor?: string;
+  bgColor?: string;
+  className?: string; // optional extra styles
+};
 
-function Progress({
-  className,
+const Progress: React.FC<ProgressBarProps> = ({
   value,
-  ...props
-}: React.ComponentProps<typeof ProgressPrimitive.Root>) {
+  barColor = "bg-green-500",
+  bgColor = "bg-gray-300",
+  className = "",
+}) => {
   return (
-    <ProgressPrimitive.Root
-      data-slot="progress"
-      className={cn(
-        "bg-primary/20 relative h-2 w-full overflow-hidden rounded-full",
-        className
-      )}
-      {...props}
+    <div
+      className={`w-full h-2 rounded overflow-hidden ${bgColor} ${className}`}
+      role="progressbar"
+      aria-valuenow={value}
+      aria-valuemin={0}
+      aria-valuemax={100}
     >
-      <ProgressPrimitive.Indicator
-        data-slot="progress-indicator"
-        className="bg-primary h-full w-full flex-1 transition-all"
-        style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
+      <div
+        className={`h-full transition-all duration-300 ease-in-out ${barColor}`}
+        style={{ width: `${value}%` }}
       />
-    </ProgressPrimitive.Root>
-  )
-}
+    </div>
+  );
+};
 
-export { Progress }
+export default Progress;
