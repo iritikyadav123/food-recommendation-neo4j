@@ -19,75 +19,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import  Progress  from "@/components/ui/progress"
+import Progress from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import axios from "axios"
+import RestaurantAdminMatrix from "@/components/restaurantAdminMetrix"
+import RestaurantAdminWeeklyReport from "@/components/restaurantAdminWeeklyReport"
+import RestaurantAdminCategoryContent from "@/components/restaurantAdminCategoryContent"
+import RestaurantAdminHotSellingItem from "@/components/restaurantAdminHotSellingItem"
+import RestaurantAdminHalfYearlyRevenue from "@/components/restaurantAdminHalfYearlyRevenue"
 
-interface restaurantMatrixProps {
-  restaurantName: string
-  currentAmount : number
-  currentOrder: number
-  prevOrder: number
-  currentAvgOrder: number
-  prevAvgOrder: number
-  satisfiedCustomer: number
-  lastMonthsatisfiedCustomer: number
-  revenueChangePercent: number
-  orderChangePercent:number
-  avgOrderValueChangePercent: number
-  satifycoutomerSenrio: number
-}
+
 
 export default function RestaurantAdmin() {
   const [activeTab, setActiveTab] = useState("overview")
-  const [restaurantMatrix, setRestaurantMatrix] = useState<restaurantMatrixProps>({} as restaurantMatrixProps)
 
-  useEffect(() => {
-    const query = `
-  query restaurantMetrix {
-     restaurantMetrix(
-      restaurantId: "459"
-      startCurrent: "2024-05-31",
-      endCurrent: "2024-07-01",
-      startPrev: "2024-04-30",
-      endPrev: "2024-06-01"
-    ) {
-      restaurantName
-      currentAmount
-      currentOrder
-      prevOrder
-      currentAvgOrder
-      prevAvgOrder
-      satisfiedCustomer
-      lastMonthsatisfiedCustomer
-      revenueChangePercent
-      orderChangePercent
-      avgOrderValueChangePercent
-      satifycoutomerSenrio
-    }
-  }
-`;
-    async function getItem() {
-      try {
-        const response = await axios.post(
-          "http://localhost:4000/",
-          {
-            query
-          },
-          { headers: { "Content-Type": "application/json" } }
-        );
 
-        const data = response.data.data.restaurantMetrix[0];
-        setRestaurantMatrix(data);
-      } catch (error) {
-        console.error("GraphQL query error:", error);
-      }
 
-    }
-    getItem();
-
-  }, [])
 
   return (
     <div className="flex min-h-screen bg-purple-100 text-slate-100 -mb-20">
@@ -219,7 +167,7 @@ export default function RestaurantAdmin() {
       <main className="flex-1 p-4 md:p-8">
         <div className="flex items-center justify-between pb-6">
           <div>
-            <h1 className="text-2xl font-bold ml-10 md:ml-0 text-slate-900">{restaurantMatrix.restaurantName}</h1>
+            <h1 className="text-2xl font-bold ml-10 md:ml-0 text-slate-900">{"the Taj Mahal"}</h1>
             <p className="text-slate-500">Monitor your restaurant's performance</p>
           </div>
           <div className="flex items-center gap-4">
@@ -244,56 +192,7 @@ export default function RestaurantAdmin() {
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              <Card className="bg-slate-950 border-slate-700">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-slate-400">Total Revenue</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center">
-                    <span className="h-5 w-5 text-purple-500 mr-2 mb-3 text-2xl">₹</span>
-                    <div className="text-2xl text-gray-100 font-bold -ml-2">{Intl.NumberFormat('en-IN').format(restaurantMatrix.currentAmount)}</div>
-                  </div>
-                  <p className={`text-xs  mt-1 ${restaurantMatrix.revenueChangePercent < 0 ? "text-red-500" : "text-green-500" }`}>{restaurantMatrix.revenueChangePercent < 0 ? "" : "+" }{restaurantMatrix.revenueChangePercent}% from last month</p>
-                </CardContent>
-              </Card>
-              <Card className="bg-slate-950 border-slate-700">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-slate-400">Total Orders</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center">
-                    <CreditCard className="h-5 w-5 text-purple-500 mr-2" />
-                    <div className="text-2xl text-gray-100  font-bold">{Intl.NumberFormat('en-IN').format(restaurantMatrix.currentOrder)}</div>
-                  </div>
-                  <p className={`text-xs  mt-1 ${restaurantMatrix.orderChangePercent < 0 ? "text-red-500" : "text-green-500" }`}>{restaurantMatrix.orderChangePercent < 0 ? "" : "+" }{restaurantMatrix.orderChangePercent}% from last month</p>
-                </CardContent>
-              </Card>
-              <Card className="bg-slate-950 border-slate-700">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-slate-400">Avg. Order Value</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center">
-                    <BarChart className="h-5 w-5 text-purple-500 mr-2" />
-                    <div className="text-2xl text-gray-100  font-bold">₹ {Intl.NumberFormat('en-IN').format(restaurantMatrix.currentAvgOrder)}</div>
-                  </div>
-                  <p className={`text-xs  mt-1 ${restaurantMatrix.avgOrderValueChangePercent < 0 ? "text-red-500" : "text-green-500" }`}>{restaurantMatrix.avgOrderValueChangePercent < 0 ? "" : "+" }{restaurantMatrix.avgOrderValueChangePercent}% from last month</p>
-                </CardContent>
-              </Card>
-              <Card className="bg-slate-950 border-slate-700">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-slate-400">Customer Satisfaction</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center">
-                    <Users className="h-5 w-5 text-purple-500 mr-2" />
-                    <div className="text-2xl text-gray-100  font-bold">{restaurantMatrix.satisfiedCustomer}%</div>
-                  </div>
-                  <p className={`text-xs  mt-1 ${restaurantMatrix.satifycoutomerSenrio < 0 ? "text-red-500" : "text-green-500" }`}>{restaurantMatrix.satifycoutomerSenrio < 0 ? "" : "+" }{restaurantMatrix.satifycoutomerSenrio}% from last month</p>
-                </CardContent>
-              </Card>
-            </div>
+            <RestaurantAdminMatrix />
 
             <div className="grid gap-6 md:grid-cols-2">
               <Card className="bg-slate-950 border-slate-700">
@@ -302,52 +201,7 @@ export default function RestaurantAdmin() {
                   <CardDescription className="text-slate-400">Daily revenue for the past week</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-[200px] flex items-end gap-2">
-                    <div className="flex-1 bg-purple-900/70 hover:bg-purple-900/90 transition-colors rounded-sm h-[30%] relative group">
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-700 text-white text-xs px-2 py-1 rounded">
-                        $1,245
-                      </div>
-                    </div>
-                    <div className="flex-1 bg-purple-900/70 hover:bg-purple-900/90 transition-colors rounded-sm h-[45%] relative group">
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-700 text-white text-xs px-2 py-1 rounded">
-                        $1,876
-                      </div>
-                    </div>
-                    <div className="flex-1 bg-purple-900/70 hover:bg-purple-900/90 transition-colors rounded-sm h-[60%] relative group">
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-700 text-white text-xs px-2 py-1 rounded">
-                        $2,498
-                      </div>
-                    </div>
-                    <div className="flex-1 bg-purple-900/70 hover:bg-purple-900/90 transition-colors rounded-sm h-[40%] relative group">
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-700 text-white text-xs px-2 py-1 rounded">
-                        $1,654
-                      </div>
-                    </div>
-                    <div className="flex-1 bg-purple-900/70 hover:bg-purple-900/90 transition-colors rounded-sm h-[75%] relative group">
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-700 text-white text-xs px-2 py-1 rounded">
-                        $3,124
-                      </div>
-                    </div>
-                    <div className="flex-1 bg-purple-500 hover:bg-purple-600 transition-colors rounded-sm h-[90%] relative group">
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-700 text-white text-xs px-2 py-1 rounded">
-                        $3,756
-                      </div>
-                    </div>
-                    <div className="flex-1 bg-purple-900/70 hover:bg-purple-900/90 transition-colors rounded-sm h-[65%] relative group">
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-700 text-white text-xs px-2 py-1 rounded">
-                        $2,687
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex justify-between mt-2 text-xs text-slate-400">
-                    <div>Mon</div>
-                    <div>Tue</div>
-                    <div>Wed</div>
-                    <div>Thu</div>
-                    <div>Fri</div>
-                    <div>Sat</div>
-                    <div>Sun</div>
-                  </div>
+                  <RestaurantAdminWeeklyReport />
                 </CardContent>
               </Card>
 
@@ -356,35 +210,8 @@ export default function RestaurantAdmin() {
                   <CardTitle className="text-gray-100 ">Top Categories</CardTitle>
                   <CardDescription className="text-slate-400">Most popular food categories</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <div className="flex justify-between mb-1 text-sm">
-                      <span className="text-gray-100 ">Main Courses</span>
-                      <span className="text-purple-400">42%</span>
-                    </div>
-                    <Progress value={42} class={"h-2 bg-slate-700"} barColor="bg-purple-500" />
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-1 text-sm">
-                      <span className="text-gray-100 ">Appetizers</span>
-                      <span className="text-purple-400">28%</span>
-                    </div>
-                    <Progress value={28} class={"h-2 bg-slate-700"} barColor="bg-purple-500" />
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-1 text-sm">
-                      <span className="text-gray-100 ">Desserts</span>
-                      <span className="text-purple-400">18%</span>
-                    </div>
-                    <Progress value={18} class={"h-2 bg-slate-700"} barColor="bg-purple-500" />
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-1 text-sm">
-                      <span className="text-gray-100 ">Beverages</span>
-                      <span className="text-purple-400">12%</span>
-                    </div>
-                    <Progress value={12} class={"h-2 bg-slate-700"} barColor="bg-purple-500" />
-                  </div>
+                <CardContent className="space-y-4 overflow-scroll h-60 scroll-smooth scrollbar-hide overflow-x-hidden">
+                  <RestaurantAdminCategoryContent />
                 </CardContent>
               </Card>
             </div>
@@ -393,260 +220,16 @@ export default function RestaurantAdmin() {
           {/* Hot Selling Items Tab */}
           <TabsContent value="hot-items" className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              <Card className="bg-slate-950 border-slate-700 overflow-hidden">
-                <div className="h-40 bg-purple-900/20 relative">
-                  <div className="absolute top-2 right-2">
-                    <Badge className="bg-purple-600">Top Seller</Badge>
-                  </div>
-                  <img
-                    src="/placeholder.svg?height=160&width=320"
-                    alt="Truffle Pasta"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <CardHeader>
-                  <CardTitle>Truffle Pasta</CardTitle>
-                  <CardDescription className="text-slate-400">Handmade pasta with truffle cream sauce</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex justify-between items-center">
-                    <div className="text-lg font-bold">$24.99</div>
-                    <div className="text-green-500 flex items-center">
-                      <TrendingUp className="h-4 w-4 mr-1" />
-                      <span>+18%</span>
-                    </div>
-                  </div>
-                  <div className="mt-2">
-                    <div className="flex justify-between mb-1 text-sm">
-                      <span>Sales Target</span>
-                      <span className="text-purple-400">78%</span>
-                    </div>
-                    <Progress value={78} className="h-2 bg-slate-700" indicatorClassName="bg-purple-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800 border-slate-700 overflow-hidden">
-                <div className="h-40 bg-purple-900/20 relative">
-                  <img
-                    src="/placeholder.svg?height=160&width=320"
-                    alt="Wagyu Steak"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <CardHeader>
-                  <CardTitle>Wagyu Steak</CardTitle>
-                  <CardDescription className="text-slate-400">
-                    Premium A5 Japanese Wagyu with truffle butter
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex justify-between items-center">
-                    <div className="text-lg font-bold">$89.99</div>
-                    <div className="text-green-500 flex items-center">
-                      <TrendingUp className="h-4 w-4 mr-1" />
-                      <span>+12%</span>
-                    </div>
-                  </div>
-                  <div className="mt-2">
-                    <div className="flex justify-between mb-1 text-sm">
-                      <span>Sales Target</span>
-                      <span className="text-purple-400">65%</span>
-                    </div>
-                    <Progress value={65} className="h-2 bg-slate-700" indicatorClassName="bg-purple-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800 border-slate-700 overflow-hidden">
-                <div className="h-40 bg-purple-900/20 relative">
-                  <img
-                    src="/placeholder.svg?height=160&width=320"
-                    alt="Chocolate Lava Cake"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <CardHeader>
-                  <CardTitle>Chocolate Lava Cake</CardTitle>
-                  <CardDescription className="text-slate-400">Warm chocolate cake with molten center</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex justify-between items-center">
-                    <div className="text-lg font-bold">$12.99</div>
-                    <div className="text-green-500 flex items-center">
-                      <TrendingUp className="h-4 w-4 mr-1" />
-                      <span>+24%</span>
-                    </div>
-                  </div>
-                  <div className="mt-2">
-                    <div className="flex justify-between mb-1 text-sm">
-                      <span>Sales Target</span>
-                      <span className="text-purple-400">82%</span>
-                    </div>
-                    <Progress value={82} className="h-2 bg-slate-700" indicatorClassName="bg-purple-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800 border-slate-700 overflow-hidden">
-                <div className="h-40 bg-purple-900/20 relative">
-                  <img
-                    src="/placeholder.svg?height=160&width=320"
-                    alt="Seafood Paella"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <CardHeader>
-                  <CardTitle>Seafood Paella</CardTitle>
-                  <CardDescription className="text-slate-400">
-                    Traditional Spanish rice with fresh seafood
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex justify-between items-center">
-                    <div className="text-lg font-bold">$32.99</div>
-                    <div className="text-green-500 flex items-center">
-                      <TrendingUp className="h-4 w-4 mr-1" />
-                      <span>+9%</span>
-                    </div>
-                  </div>
-                  <div className="mt-2">
-                    <div className="flex justify-between mb-1 text-sm">
-                      <span>Sales Target</span>
-                      <span className="text-purple-400">58%</span>
-                    </div>
-                    <Progress value={58} className="h-2 bg-slate-700" indicatorClassName="bg-purple-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800 border-slate-700 overflow-hidden">
-                <div className="h-40 bg-purple-900/20 relative">
-                  <img
-                    src="/placeholder.svg?height=160&width=320"
-                    alt="Signature Cocktail"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <CardHeader>
-                  <CardTitle>Signature Cocktail</CardTitle>
-                  <CardDescription className="text-slate-400">
-                    House special with premium spirits and fresh fruits
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex justify-between items-center">
-                    <div className="text-lg font-bold">$16.99</div>
-                    <div className="text-green-500 flex items-center">
-                      <TrendingUp className="h-4 w-4 mr-1" />
-                      <span>+15%</span>
-                    </div>
-                  </div>
-                  <div className="mt-2">
-                    <div className="flex justify-between mb-1 text-sm">
-                      <span>Sales Target</span>
-                      <span className="text-purple-400">72%</span>
-                    </div>
-                    <Progress value={72} className="h-2 bg-slate-700" indicatorClassName="bg-purple-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800 border-slate-700 overflow-hidden">
-                <div className="h-40 bg-purple-900/20 relative">
-                  <img
-                    src="/placeholder.svg?height=160&width=320"
-                    alt="Lobster Bisque"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <CardHeader>
-                  <CardTitle>Lobster Bisque</CardTitle>
-                  <CardDescription className="text-slate-400">Creamy soup with fresh lobster and herbs</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex justify-between items-center">
-                    <div className="text-lg font-bold">$18.99</div>
-                    <div className="text-green-500 flex items-center">
-                      <TrendingUp className="h-4 w-4 mr-1" />
-                      <span>+7%</span>
-                    </div>
-                  </div>
-                  <div className="mt-2">
-                    <div className="flex justify-between mb-1 text-sm">
-                      <span>Sales Target</span>
-                      <span className="text-purple-400">45%</span>
-                    </div>
-                    <Progress value={45} className="h-2 bg-slate-700" indicatorClassName="bg-purple-500" />
-                  </div>
-                </CardContent>
-              </Card>
+               <RestaurantAdminHotSellingItem />
             </div>
           </TabsContent>
 
           {/* Trends Tab */}
           <TabsContent value="trends" className="space-y-6">
-            <Card className="bg-slate-800 border-slate-700">
-              <CardHeader>
-                <CardTitle>Monthly Sales Trend</CardTitle>
-                <CardDescription className="text-slate-400">Revenue over the past 6 months</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px] flex items-end gap-4">
-                  <div className="flex-1 flex flex-col justify-end">
-                    <div className="bg-purple-900/20 hover:bg-purple-900/40 transition-colors rounded-t-sm h-[40%] relative group">
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-700 text-white text-xs px-2 py-1 rounded">
-                        $18,245
-                      </div>
-                    </div>
-                    <div className="text-xs text-slate-400 text-center mt-2">Jan</div>
-                  </div>
-                  <div className="flex-1 flex flex-col justify-end">
-                    <div className="bg-purple-900/20 hover:bg-purple-900/40 transition-colors rounded-t-sm h-[55%] relative group">
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-700 text-white text-xs px-2 py-1 rounded">
-                        $21,876
-                      </div>
-                    </div>
-                    <div className="text-xs text-slate-400 text-center mt-2">Feb</div>
-                  </div>
-                  <div className="flex-1 flex flex-col justify-end">
-                    <div className="bg-purple-900/20 hover:bg-purple-900/40 transition-colors rounded-t-sm h-[65%] relative group">
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-700 text-white text-xs px-2 py-1 rounded">
-                        $24,498
-                      </div>
-                    </div>
-                    <div className="text-xs text-slate-400 text-center mt-2">Mar</div>
-                  </div>
-                  <div className="flex-1 flex flex-col justify-end">
-                    <div className="bg-purple-900/20 hover:bg-purple-900/40 transition-colors rounded-t-sm h-[50%] relative group">
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-700 text-white text-xs px-2 py-1 rounded">
-                        $19,654
-                      </div>
-                    </div>
-                    <div className="text-xs text-slate-400 text-center mt-2">Apr</div>
-                  </div>
-                  <div className="flex-1 flex flex-col justify-end">
-                    <div className="bg-purple-900/20 hover:bg-purple-900/40 transition-colors rounded-t-sm h-[75%] relative group">
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-700 text-white text-xs px-2 py-1 rounded">
-                        $28,124
-                      </div>
-                    </div>
-                    <div className="text-xs text-slate-400 text-center mt-2">May</div>
-                  </div>
-                  <div className="flex-1 flex flex-col justify-end">
-                    <div className="bg-purple-500 hover:bg-purple-600 transition-colors rounded-t-sm h-[90%] relative group">
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-700 text-white text-xs px-2 py-1 rounded">
-                        $32,756
-                      </div>
-                    </div>
-                    <div className="text-xs text-slate-400 text-center mt-2">Jun</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <RestaurantAdminHalfYearlyRevenue />
 
             <div className="grid gap-6 md:grid-cols-2">
-              <Card className="bg-slate-800 border-slate-700">
+              <Card className="bg-slate-950 border-slate-700">
                 <CardHeader>
                   <CardTitle>Peak Hours</CardTitle>
                   <CardDescription className="text-slate-400">Order distribution by time of day</CardDescription>
@@ -673,7 +256,7 @@ export default function RestaurantAdmin() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-800 border-slate-700">
+              <Card className="bg-slate-950 border-slate-700">
                 <CardHeader>
                   <CardTitle>Order Types</CardTitle>
                   <CardDescription className="text-slate-400">Distribution by order method</CardDescription>

@@ -278,6 +278,35 @@ type restaurantMetrixProps {
   avgOrderValueChangePercent: Float
   satifycoutomerSenrio: Float
 }
+type DailyRevenue {
+  dayName: String
+  orderDate: Date
+  dailyRevenue: Float
+  percentageOfWeek: Float
+}
+
+type CategorySales {
+  Category: String
+  CategoryRevenue: Float
+  SalesPercentage: Float
+}
+
+type ItemSalesComparison {
+  Item: String
+  AprilSales: Float
+  MarchSales: Float
+  PercentChange: Float
+}
+
+
+
+type MonthlyRevenue {
+  Year: Int
+  Month: Int
+  MonthYear: String
+  MonthlyRevenue: Float
+  RevenuePercentage: Float
+}
 
 
 type Query {
@@ -821,5 +850,127 @@ type Query {
         """,
         columnName: "restaurantMetrixProps"
       )
+
+  weeklyRevenueBreakdown(
+    restaurantId: ID!
+    startDate: Date!
+    endDate: Date!
+  ): [DailyRevenue!]!
+    @cypher(
+      statement: """
+      MATCH (r:Restaurant {restaurantId: $restaurantId})-[:HAS_ORDER]->(o:Order)
+      WHERE date(o.date) >= date($startDate) AND date(o.date) <= date($endDate)
+      WITH 
+        date(o.date) AS orderDate,
+        CASE date(o.date).dayOfWeek
+          WHEN 1 THEN 'Monday'
+          WHEN 2 THEN 'Tuesday'
+          WHEN 3 THEN 'Wednesday'
+          WHEN 4 THEN 'Thursday'
+          WHEN 5 THEN 'Friday'
+          WHEN 6 THEN 'Saturday'
+          WHEN 7 THEN 'Sunday'
+        END AS dayName,
+        sum(o.total_price) AS dailyRevenue
+      WITH 
+        collect({orderDate: orderDate, dayName: dayName, dailyRevenue: dailyRevenue}) AS dailyData
+      WITH 
+        dailyData,
+        reduce(total = 0.0, d IN dailyData | total + d.dailyRevenue) AS weeklyRevenue
+      UNWIND dailyData AS data
+      RETURN {
+        dayName: data.dayName,
+        orderDate: data.orderDate,
+        dailyRevenue: data.dailyRevenue,
+        percentageOfWeek: round((data.dailyRevenue * 100.0) / weeklyRevenue, 2)  } AS DailyRevenue
+      ORDER BY data.orderDate
+      """,
+      columnName : "DailyRevenue"
+    )
+
+  categorySalesBreakdown(restaurantId: ID!, year: Int!, month: Int!): [CategorySales!]!
+    @cypher(
+      statement: """
+      MATCH (r:Restaurant {restaurantId: $restaurantId})-[:HAS_ORDER]->(o:Order)-[:INCLUDES]->(i:Item)<-[:HAS_ITEM]-(c:Category)
+      WHERE date(o.date).year = $year AND date(o.date).month = $month
+      WITH c.name AS categoryName, SUM(i.price) AS categoryRevenue
+      WITH collect({category: categoryName, revenue: categoryRevenue}) AS categories, SUM(categoryRevenue) AS totalRevenue
+      UNWIND categories AS cat
+      RETURN {
+        Category: cat.category,
+        CategoryRevenue: cat.revenue,
+        SalesPercentage: round((cat.revenue / totalRevenue) * 100, 2)
+        } AS CategorySales
+      ORDER BY CategorySales.SalesPercentage DESC
+      """,
+      columnName: "CategorySales"
+    )
+  itemSalesComparison(
+    restaurantId: ID!
+    aprilYear: Int!
+    aprilMonth: Int!
+    marchYear: Int!
+    marchMonth: Int!
+  ): [ItemSalesComparison!]!
+    @cypher(
+      statement: """
+      MATCH (r:Restaurant {restaurantId: $restaurantId})-[:HAS_ORDER]->(o:Order)-[:INCLUDES]->(i:Item)
+      WHERE date(o.date).year = $aprilYear AND date(o.date).month = $aprilMonth
+      WITH i.name AS itemName, SUM(o.total_price) AS aprilRevenue
+
+      OPTIONAL MATCH (r2:Restaurant {restaurantId: $restaurantId})-[:HAS_ORDER]->(o2:Order)-[:INCLUDES]->(i2:Item)
+      WHERE date(o2.date).year = $marchYear AND date(o2.date).month = $marchMonth AND i2.name = itemName
+      WITH itemName, aprilRevenue, COALESCE(SUM(o2.total_price), 0) AS marchRevenue
+
+      RETURN {
+        Item: itemName,
+        AprilSales: aprilRevenue,
+        MarchSales: marchRevenue ,
+        PercentChange: CASE 
+          WHEN marchRevenue = 0 AND aprilRevenue > 0 THEN 100.0
+          WHEN marchRevenue > 0 THEN round(((aprilRevenue - marchRevenue) / marchRevenue * 100.0), 2)
+          ELSE 0.0
+        END }  AS ItemSalesComparison
+      ORDER BY ItemSalesComparison.AprilSales DESC
+      """,
+      columnName: "ItemSalesComparison"
+    )
+
+  
+
+  monthlyRevenueBreakdown(
+    restaurantId: ID!
+    startDate: Date!
+    endDate: Date!
+  ): [MonthlyRevenue!]!
+    @cypher(
+      statement: """
+      MATCH (r:Restaurant {restaurantId: $restaurantId})-[:HAS_ORDER]->(o:Order)
+      WHERE date(o.date) >= date($startDate) AND date(o.date) <= date($endDate)
+      WITH 
+        date(o.date).year AS Year,
+        date(o.date).month AS Month,
+        toString(date(o.date).month) + '-' + toString(date(o.date).year) AS MonthYear,
+        SUM(o.total_price) AS MonthlyRevenue
+      ORDER BY Year DESC, Month DESC
+      WITH collect({
+        Year: Year,
+        Month: Month,
+        MonthYear: MonthYear,
+        MonthlyRevenue: MonthlyRevenue
+      }) AS monthlyData
+      WITH monthlyData,
+           REDUCE(total = 0.0, row IN monthlyData | total + row.MonthlyRevenue) AS TotalRevenue
+      UNWIND monthlyData AS row
+      RETURN {
+        Year: row.Year ,
+        Month: row.Month,
+        MonthYear: row.MonthYear,
+        MonthlyRevenue: row.MonthlyRevenue,
+        RevenuePercentage: ROUND((row.MonthlyRevenue * 100.0) / TotalRevenue, 2)} AS MonthlyRevenue
+      ORDER BY MonthlyRevenue.Year, MonthlyRevenue.Month
+      """,
+      columnName : "MonthlyRevenue"
+    ) 
 
 }
